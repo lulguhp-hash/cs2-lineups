@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>HAE · Раскидки CS2</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root{--bg:#14171c;--card:#1d222a;--text:#e8ebf0;--muted:#8d97a6;--line:#2a313b;--a:hsl(30 95% 55%)}
+*{-webkit-tap-highlight-color:transparent}
+html,body{touch-action:manipulation;-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif;padding:12px 12px 40px}
+.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.logo{font-size:30px;font-weight:900;letter-spacing:2px;background:linear-gradient(90deg,#ff3b3b,#ff9f1a,#ffe14d,#3ddc6f,#37b7ff,#7b5cff,#d94fff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.sub{color:var(--muted);font-size:13px}
+.menu-btn{background:var(--card);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:8px 14px;font-size:15px}
+input[type=search]{width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--text);font-size:16px;margin-bottom:10px}
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:8px}
+.chip{flex:none;padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:none;color:var(--muted);font-size:14px}
+.chip.on{background:var(--a);border-color:var(--a);color:#14171c;font-weight:600}
+.card{background:var(--card);border-radius:12px;margin:12px 0;overflow:hidden;border-top:3px solid var(--a)}
+.card img,.card video{width:100%;display:block;background:#000}
+.card video{aspect-ratio:9/16;max-height:70vh}
+iframe{width:100%;height:740px;border:0;display:block;background:#000}
+.ph{height:150px;display:flex;align-items:center;justify-content:center;color:var(--muted);background:repeating-linear-gradient(45deg,#1a1f26,#1a1f26 10px,#1d222a 10px,#1d222a 20px)}
+.info{padding:10px 12px 12px}
+.title{font-weight:600}
+.meta{color:var(--muted);font-size:13px;margin-top:2px}
+.empty{color:var(--muted);text-align:center;padding:40px 0}
+.sheet{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:flex-end;z-index:10}
+.sheet.open{display:flex}
+.panel{width:100%;background:var(--card);border-radius:18px 18px 0 0;padding:18px 16px calc(24px + env(safe-area-inset-bottom,0px))}
+.panel h2{margin:0 0 12px;font-size:17px}
+.sw{display:flex;flex-wrap:wrap;gap:10px}
+.sw button{width:44px;height:44px;border-radius:50%;border:3px solid transparent;padding:0}
+.sw button.on{border-color:#fff}
+.sw .rb{background:conic-gradient(#ff3b3b,#ffe14d,#3ddc6f,#37b7ff,#7b5cff,#ff3b3b);width:auto;border-radius:22px;padding:0 16px;color:#111;font-weight:700;font-size:14px}
+.close{margin-top:16px;width:100%;padding:12px;border-radius:10px;border:0;background:var(--a);color:#14171c;font-weight:700;font-size:15px}
+</style>
+</head>
+<body>
+<div class="top">
+  <div><div class="logo">HAE</div><div class="sub">Раскидки гранат CS2</div></div>
+  <button class="menu-btn" id="menuBtn">Меню</button>
+</div>
+<input id="q" type="search" placeholder="Поиск: смок, окно, банан…">
+<div class="chips" id="maps"></div>
+<div class="chips" id="types"></div>
+<div id="list"></div>
+
+<div class="sheet" id="sheet">
+  <div class="panel">
+    <h2>Цвет приложения</h2>
+    <div class="sw" id="sw"></div>
+    <button class="close" id="closeBtn">Готово</button>
+  </div>
+</div>
+
+<script>
+// ДОБАВЛЯЙТЕ РАСКИДКИ СЮДА. Фото: img:"photos/имя.jpg" (файл в репозитории). Видео: video:"videos/имя.mp4" или tiktok:"номер".
+const LINEUPS = [
+  {map:"Mirage", type:"Смок", title:"Окно из топ-мида", desc:"Встаньте за тележкой, прицел в нижнюю часть антенны посередине, затем бегом бросок.", author:"по материалам Sportskeeda"},
+  {map:"Mirage", type:"Смок", title:"Коннектор", desc:"Присядьте слева от мусорного бака, идите в приседе вперёд, пока прицел не совпадёт с полом балкона, и бросьте в прыжке.", author:"по материалам Charlie INTEL"},
+  {map:"Mirage", type:"Смок", title:"Лестница на A", desc:"Один из главных смоков на A. Точку и фото добавьте сами.", author:"—"},
+  {map:"Inferno", type:"Смок", title:"Банан → CT", desc:"Встаньте у ярко-красной двери на банане, прицельтесь в угол уступа.", author:"по материалам Prima Games"},
+  {map:"Dust2", type:"Смок", title:"X-Box со спавна T", desc:"Простой смок, облегчающий вход на B из мида. Точку и фото добавьте сами.", author:"по материалам GGRecon"},
+  {map:"Dust2", type:"Смок", title:"Верхние туннели с CT-мида", desc:"Встаньте у металла рядом с грузовиком, прицел на нижний левый угол третьего камня над дверями на B, бросок в прыжке.", author:"по материалам GGRecon"},
+  {map:"Dust2", type:"Смок", title:"B Doors", desc:"Один из самых ценных смоков на B: режет ротацию и обзор при ретейке. Точку и фото добавьте сами.", author:"—"},
+  {map:"Ancient", type:"Смок", title:"Красный/мид-хаус (за T)", desc:"Базовый смок за T на Ancient. Точку и фото добавьте сами.", author:"—"}
+];
+const MAPS = ["Все","Ancient","Anubis","Cache","Cobblestone","Dust2","Inferno","Mirage","Nuke"];
+const TYPES = ["Все","Смок","Флеш","Молотов","HE"];
+const COLORS = [["Красный",0],["Оранжевый",30],["Жёлтый",52],["Зелёный",140],["Голубой",195],["Синий",220],["Фиолетовый",270]];
+
+const tg = window.Telegram && Telegram.WebApp;
+if (tg) { tg.ready(); tg.expand(); }
+
+// запрет масштабирования
+["gesturestart","gesturechange","gestureend"].forEach(n => document.addEventListener(n, e => e.preventDefault()));
+document.addEventListener("touchmove", e => { if (e.touches.length > 1) e.preventDefault(); }, {passive:false});
+let lastTap = 0;
+document.addEventListener("touchend", e => { const t = Date.now(); if (t - lastTap < 300) e.preventDefault(); lastTap = t; }, {passive:false});
+
+const state = {map:"Все", type:"Все", q:""};
+let theme = "rainbow", timer = null;
+
+function store(k, v){ try{ if(v===undefined) return localStorage.getItem(k); localStorage.setItem(k, v);}catch(e){return null;} }
+
+function applyTheme(t){
+  theme = t; store("theme", t);
+  clearInterval(timer);
+  const root = document.documentElement;
+  if (t === "rainbow") {
+    const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let h = 0;
+    root.style.setProperty("--a", "hsl(0 95% 58%)");
+    if (!still) timer = setInterval(() => { h = (h + 2) % 360; root.style.setProperty("--a", `hsl(${h} 95% 58%)`); }, 60);
+  } else {
+    root.style.setProperty("--a", `hsl(${t} 90% 55%)`);
+  }
+  drawSwatches();
+}
+
+function drawSwatches(){
+  const box = document.getElementById("sw"); box.innerHTML = "";
+  const rb = document.createElement("button");
+  rb.className = "rb" + (theme === "rainbow" ? " on" : ""); rb.textContent = "Радуга";
+  rb.onclick = () => applyTheme("rainbow"); box.appendChild(rb);
+  COLORS.forEach(([n,h]) => {
+    const b = document.createElement("button");
+    b.style.background = `hsl(${h} 90% 55%)`; b.title = n; b.setAttribute("aria-label", n);
+    b.className = String(theme) === String(h) ? "on" : "";
+    b.onclick = () => applyTheme(h); box.appendChild(b);
+  });
+}
+
+function chips(id, key, list){
+  const box = document.getElementById(id); box.innerHTML = "";
+  list.forEach(v => {
+    const b = document.createElement("button");
+    b.className = "chip" + (state[key] === v ? " on" : ""); b.textContent = v;
+    b.onclick = () => { state[key] = v; render(); }; box.appendChild(b);
+  });
+}
+
+function render(){
+  chips("maps","map",MAPS); chips("types","type",TYPES);
+  const q = state.q.toLowerCase();
+  const items = LINEUPS.filter(l =>
+    (state.map === "Все" || l.map === state.map) &&
+    (state.type === "Все" || l.type === state.type) &&
+    (l.title + l.desc + l.map + l.type).toLowerCase().includes(q));
+  const list = document.getElementById("list");
+  list.innerHTML = items.length ? "" : '<div class="empty">Пока ничего нет. Выберите другую карту или добавьте раскидку в список LINEUPS.</div>';
+  items.forEach(l => {
+    const d = document.createElement("div"); d.className = "card";
+    let media = '<div class="ph">Фото добавим позже</div>';
+    if (l.tiktok) media = `<iframe src="https://www.tiktok.com/embed/v2/${l.tiktok}" allowfullscreen allow="encrypted-media"></iframe>`;
+    else if (l.video) media = `<video src="${l.video}" controls playsinline preload="metadata"></video>`;
+    else if (l.img) media = `<img src="${l.img}" alt="">`;
+    d.innerHTML = media + '<div class="info"><div class="title"></div><div class="meta"></div></div>';
+    d.querySelector(".title").textContent = l.title;
+    d.querySelector(".meta").textContent = `${l.map}, ${l.type}. ${l.desc} Источник: ${l.author}`;
+    list.appendChild(d);
+  });
+}
+
+const sheet = document.getElementById("sheet");
+document.getElementById("menuBtn").onclick = () => sheet.classList.add("open");
+document.getElementById("closeBtn").onclick = () => sheet.classList.remove("open");
+sheet.onclick = e => { if (e.target === sheet) sheet.classList.remove("open"); };
+document.getElementById("q").oninput = e => { state.q = e.target.value; render(); };
+
+const saved = store("theme");
+applyTheme(saved && saved !== "rainbow" ? Number(saved) : "rainbow");
+render();
+</script>
+</body>
+</html>
