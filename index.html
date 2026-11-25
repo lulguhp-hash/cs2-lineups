@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>HAE · Раскидки CS2</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root{--bg:#0e1116;--card:#1a1f27;--text:#e8ebf0;--muted:#8d97a6;--line:#2a313b;--a:hsl(30 95% 55%)}
+*{-webkit-tap-highlight-color:transparent}
+html,body{touch-action:manipulation;-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif;padding:12px 12px 40px}
+.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.logo{font-size:30px;font-weight:900;letter-spacing:2px;background:linear-gradient(90deg,#ff3b3b,#ff9f1a,#ffe14d,#3ddc6f,#37b7ff,#7b5cff,#d94fff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.sub{color:var(--muted);font-size:13px}
+.menu-btn{background:var(--card);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:8px 14px;font-size:15px}
+input[type=search]{width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--text);font-size:16px;margin:4px 0 10px}
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:8px}
+.chip{flex:none;padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:none;color:var(--muted);font-size:14px}
+.chip.on{background:var(--a);border-color:var(--a);color:#14171c;font-weight:600}
+.site{display:block;width:100%;box-sizing:border-box;padding:12px;border-radius:10px;border:1px solid var(--a);background:none;color:var(--a);font-size:15px;font-weight:600;margin:4px 0 6px}
+.note{color:var(--muted);font-size:13px;margin:6px 0 10px}
+h3{margin:18px 0 6px;font-size:15px;color:var(--a)}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--card);border-left:3px solid var(--a);border-radius:10px;padding:10px 12px;margin:6px 0}
+.row .t{font-weight:600;font-size:14px}
+.row .d{color:var(--muted);font-size:13px;margin-top:2px}
+.go{flex:none;border:0;border-radius:8px;background:var(--a);color:#14171c;font-weight:700;padding:8px 12px;font-size:14px}
+.foot{color:var(--muted);font-size:12px;margin-top:24px;text-align:center}
+.sheet{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:flex-end;z-index:10}
+.sheet.open{display:flex}
+.panel{width:100%;background:var(--card);border-radius:18px 18px 0 0;padding:18px 16px calc(24px + env(safe-area-inset-bottom,0px))}
+.panel h2{margin:0 0 12px;font-size:17px}
+.sw{display:flex;flex-wrap:wrap;gap:10px}
+.sw button{width:44px;height:44px;border-radius:50%;border:3px solid transparent;padding:0}
+.sw button.on{border-color:#fff}
+.sw .rb{background:conic-gradient(#ff3b3b,#ffe14d,#3ddc6f,#37b7ff,#7b5cff,#ff3b3b);width:auto;border-radius:22px;padding:0 16px;color:#111;font-weight:700;font-size:14px}
+.close{margin-top:16px;width:100%;padding:12px;border-radius:10px;border:0;background:var(--a);color:#14171c;font-weight:700;font-size:15px}
+</style>
+</head>
+<body>
+<div class="top">
+  <div><div class="logo">HAE</div><div class="sub">Раскидки гранат CS2</div></div>
+  <button class="menu-btn" id="menuBtn">Меню</button>
+</div>
+<input id="q" type="search" placeholder="Поиск: xbox, long, doors…">
+<div class="chips" id="maps"></div>
+<div class="chips" id="types"></div>
+<div class="chips" id="areas"></div>
+<button class="site" id="siteBtn"></button>
+<div id="list"></div>
+<div class="foot">Гайды и видео принадлежат их авторам. Ссылки ведут на cs2util.com</div>
+
+<div class="sheet" id="sheet">
+  <div class="panel">
+    <h2>Цвет приложения</h2>
+    <div class="sw" id="sw"></div>
+    <button class="close" id="closeBtn">Готово</button>
+  </div>
+</div>
+
+<script>
+const SITE = "https://www.cs2util.com/ru/";
+const MAPS = {Ancient:"ancient",Anubis:"anubis",Cache:"cache",Cobblestone:"cbble",Dust2:"dust2",Inferno:"inferno",Mirage:"mirage",Nuke:"nuke"};
+const TYPES = {"Смок":"smoke","Флеш":"flash","Молотов":"molotov","HE":"grenade"};
+
+// Dust2 · смоки: область -> адреса страниц гайдов на cs2util (после /ru/dust2/smoke/)
+const D2 = {
+ "Xbox":["spawn1-TO-XBOX","spawn2-TO-XBOX","spawn3-TO-XBOX","spawn4-TO-XBOX","xbox-smoke-from-long","xbox-smoke-from-right-side-mid","mid-xbox-smoke-from-ct-mid","xbox-smoke-from-nomal-t-spawn","xbox-smoke-from-mid-barrels"],
+ "Лонг A":["a-site-cross-smoke-from-long-corner","a-site-cross-smoke-from-outside-long","a-site-cross-smoke-from-rs-mid","a-site-cross-smoke-from-blue-box","a-doors-smoke-from-boost","a-door-smoke-from-cross","a-long-smoke-from-a-plat1","a-long-smoke-from-a-plat2","a-long-smoke-from-a-plat3","a-long-smoke-from-boost","a-long-smoke-from-t-spwan1","long-take-protection-smoke","long-take-protection-smoke-from-t-spawn1","ct-long-cut-off-smoke"],
+ "Шорт A":["a-short-smoke-from-drum","a-short-smoke-from-outside-long","catwalk-smoke-from-goose","ct-spawn-smoke-for-cross-from-short"],
+ "Мид":["suicide-smoke-from-ct-mid","suicide-smoke-from-short-boost","middoors-smoke-from-t-spawn1","middoors-smoke-from-t-spawn2","mid-door-smoke-from-t-spawn","middoors-smoke-from-suicide","mid-doors-smoke-from-lower-tunnels","mid-doors-waterfall-smoke-from-xbox","xbox-to-mid-door-waterfall-smoke","top-mid-smoke-from-short-boost","t-a-fast-mid-smoke-1","t-a-fast-mid-smoke-2","t-a-fast-mid-smoke-3","t-a-fast-mid-smoke-4","t-b-fast-mid-smoke-1","t-b-fast-mid-smoke-2","t-b-fast-mid-smoke-3","low-tunnels-smoke-from-outside-long"],
+ "CT-спавн":["ct-smoke-for-big-box","ct-spawn-cross-smoke-from-top-mid","ct-spawn-smoke-from-a-site-pit","ct-spawn-smoke-from-a-site-pit-2","ct-spawn-smoke-from-xbox","ct-waterfall-smoke-from-t-spawn","ct-mid-cross-smoke-from-ct-spawn"],
+ "Плент B":["b-window-smoke-from-outside-tunnels","window-smoke-from-upper-tunnels2","b-doors-smoke-from-outside-tunnels-cover","b-doors-smoke-from-upper-tunnels","b-doors-inside-smoke-from-upper-tunnels","b-doors-smoke-from-top-mid","b-doors-waterfall-smoke-from-t-plat","niko-fast-b-doors-smoke","doors-smoke-from-tunnels1","doors-smoke-from-tunnels2","b-hole-smoke-from-ct-mid","b-site-cutoff-smoke-from-doors1","b-site-cutoff-smoke-from-doors2","b-tunnels-smoke-from-b-plat","AWPer-cut-off-smoke-for-b-site-from-outside-tunnels"],
+ "Плент A / рампа":["a-site-smoke-from-a-short","a-ramp-smoke"]
+};
+const nice = s => { s = s.replace(/-/g," ").replace(/\bTO\b/,"→"); return s[0].toUpperCase() + s.slice(1); };
+
+const ITEMS = [];
+for (const [area, slugs] of Object.entries(D2))
+  slugs.forEach(s => ITEMS.push({map:"Dust2", type:"Смок", area, title:nice(s), link:SITE+"dust2/smoke/"+s}));
+
+// СВОИ ЗАМЕТКИ: добавляйте сюда. link — необязателен.
+[
+ {map:"Mirage", type:"Смок", title:"Окно из топ-мида", desc:"Встаньте за тележкой, прицел в нижнюю часть антенны посередине, затем бегом бросок."},
+ {map:"Mirage", type:"Смок", title:"Коннектор", desc:"Присядьте слева от мусорного бака, идите в приседе, пока прицел не совпадёт с полом балкона, бросок в прыжке."},
+ {map:"Inferno", type:"Смок", title:"Банан → CT", desc:"Встаньте у ярко-красной двери на банане, прицельтесь в угол уступа."}
+].forEach(o => ITEMS.push({area:"Мои заметки", ...o}));
+
+const tg = window.Telegram && Telegram.WebApp;
+if (tg) { tg.ready(); tg.expand(); }
+const openLink = u => (tg && tg.openLink) ? tg.openLink(u) : window.open(u, "_blank");
+
+// запрет масштабирования
+["gesturestart","gesturechange","gestureend"].forEach(n => document.addEventListener(n, e => e.preventDefault()));
+document.addEventListener("touchmove", e => { if (e.touches.length > 1) e.preventDefault(); }, {passive:false});
+let lastTap = 0;
+document.addEventListener("touchend", e => { const t = Date.now(); if (t - lastTap < 300) e.preventDefault(); lastTap = t; }, {passive:false});
+
+const state = {map:"Dust2", type:"Смок", area:"Все", q:""};
+let theme = "rainbow", timer = null;
+const COLORS = [["Красный",0],["Оранжевый",30],["Жёлтый",52],["Зелёный",140],["Голубой",195],["Синий",220],["Фиолетовый",270]];
+function store(k, v){ try{ if(v===undefined) return localStorage.getItem(k); localStorage.setItem(k, v);}catch(e){return null;} }
+
+function applyTheme(t){
+  theme = t; store("theme", t); clearInterval(timer);
+  const root = document.documentElement;
+  if (t === "rainbow") {
+    let h = 0; root.style.setProperty("--a", "hsl(0 95% 58%)");
+    if (!matchMedia("(prefers-reduced-motion: reduce)").matches)
+      timer = setInterval(() => { h = (h + 2) % 360; root.style.setProperty("--a", `hsl(${h} 95% 58%)`); }, 60);
+  } else root.style.setProperty("--a", `hsl(${t} 90% 55%)`);
+  drawSwatches();
+}
+function drawSwatches(){
+  const box = document.getElementById("sw"); box.innerHTML = "";
+  const rb = document.createElement("button");
+  rb.className = "rb" + (theme === "rainbow" ? " on" : ""); rb.textContent = "Радуга";
+  rb.onclick = () => applyTheme("rainbow"); box.appendChild(rb);
+  COLORS.forEach(([n,h]) => {
+    const b = document.createElement("button");
+    b.style.background = `hsl(${h} 90% 55%)`; b.setAttribute("aria-label", n);
+    b.className = String(theme) === String(h) ? "on" : "";
+    b.onclick = () => applyTheme(h); box.appendChild(b);
+  });
+}
+
+function chips(id, key, list){
+  const box = document.getElementById(id); box.innerHTML = "";
+  list.forEach(v => {
+    const b = document.createElement("button");
+    b.className = "chip" + (state[key] === v ? " on" : ""); b.textContent = v;
+    b.onclick = () => { state[key] = v; if (key !== "area") state.area = "Все"; render(); };
+    box.appendChild(b);
+  });
+}
+
+function render(){
+  const mine = ITEMS.filter(i => i.map === state.map && i.type === state.type);
+  const areas = ["Все", ...new Set(mine.map(i => i.area))];
+  if (!areas.includes(state.area)) state.area = "Все";
+  chips("maps","map",Object.keys(MAPS)); chips("types","type",Object.keys(TYPES));
+  chips("areas","area",areas.length > 2 ? areas : ["Все"]);
+
+  const siteBtn = document.getElementById("siteBtn");
+  siteBtn.textContent = `Все: ${state.type.toLowerCase()} · ${state.map} на cs2util`;
+  siteBtn.onclick = () => openLink(`${SITE}${MAPS[state.map]}/${TYPES[state.type]}`);
+
+  const q = state.q.toLowerCase();
+  const items = mine.filter(i => (state.area === "Все" || i.area === state.area) && (i.title + (i.desc||"")).toLowerCase().includes(q));
+  const list = document.getElementById("list"); list.innerHTML = "";
+  if (!mine.length) list.innerHTML = '<div class="note">Для этой карты и типа список пока не загружен. Нажмите кнопку выше, чтобы открыть все раскидки на сайте, или добавьте свои в ITEMS.</div>';
+  else if (!items.length) list.innerHTML = '<div class="note">Ничего не найдено. Попробуйте другой запрос.</div>';
+
+  let last = null;
+  items.forEach(i => {
+    if (i.area !== last) { const h = document.createElement("h3"); h.textContent = i.area; list.appendChild(h); last = i.area; }
+    const r = document.createElement("div"); r.className = "row";
+    r.innerHTML = '<div><div class="t"></div><div class="d"></div></div>';
+    r.querySelector(".t").textContent = i.title;
+    r.querySelector(".d").textContent = i.desc || "";
+    if (!i.desc) r.querySelector(".d").remove();
+    if (i.link) { const b = document.createElement("button"); b.className = "go"; b.textContent = "Открыть"; b.onclick = () => openLink(i.link); r.appendChild(b); }
+    list.appendChild(r);
+  });
+}
+
+const sheet = document.getElementById("sheet");
+document.getElementById("menuBtn").onclick = () => sheet.classList.add("open");
+document.getElementById("closeBtn").onclick = () => sheet.classList.remove("open");
+sheet.onclick = e => { if (e.target === sheet) sheet.classList.remove("open"); };
+document.getElementById("q").oninput = e => { state.q = e.target.value; render(); };
+
+const saved = store("theme");
+applyTheme(saved && saved !== "rainbow" ? Number(saved) : "rainbow");
+render();
+</script>
+</body>
+</html>
